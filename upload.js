@@ -5,15 +5,15 @@ import { exec } from 'child_process';
 import common from '../../lib/common/common.js';
 import path from 'path';
 import fs from 'fs';
-import Setting from './components/setting.js';
+import settings from './components/setting.js';
 
 const _path = path.join(path.resolve(), 'plugins/uploader');
 
 export class uploadimg extends plugin {
     constructor () {
 		super({
-		  name: '定时同步',
-		  dsc:  '定时同步目录中的文件',
+		  name:  '定时同步',
+		  dsc:   '定时同步目录中的文件',
 		  event: 'message',
 		  priority: 3000,
 		  rule: [
@@ -31,26 +31,27 @@ export class uploadimg extends plugin {
 		this.crontable = {}
 		this.task = []
 		
-		let gcfg = Setting.getConfig('cron')['groups']
+		let gcfg = settings.getConfig('cron').groups
 
 		for (let i = 0; i < gcfg.length; i++) {
 			this.task.push(
 				{
 					cron: gcfg[i][2],
-					name: `定时上传图片文件${i}`
+					name: `定时上传图片文件${i}`,
 					fnc: () => this.upload(i),
 					log: true
 				}
 			)
 			
-			let dDir = path.join(_path, 'upload', gcfg[i][0]);
+			let dDir = path.join(_path, 'upload', String(gcfg[i][0]));
 			if (!fs.existsSync(dDir)) {
 				fs.mkdirSync(dDir);
-				logger.mark('creation directory', `Directory 'd' created at ${dDir}`);
+				logger.mark('creation directory', `Directory ${dDir} created`);
 			}
 			
-			this.crontable[gcfg[i][0]] = {idx: i, nextGroupPath: gcfg[i][1]}
+			this.crontable[gcfg[i][0]] = {'idx': i, 'nextGroupPath': String(gcfg[i][1])}
 		}
+		
 	}
 	
 	/**
@@ -60,10 +61,11 @@ export class uploadimg extends plugin {
 	  let facePath  = path.join(_path, 'upload', groupPath);
 	  let faceFiles = []
 	  fs.readdirSync(facePath).forEach(fileName => faceFiles.push(path.join(_path, 'upload', groupPath, fileName)));
+	  
 	  return faceFiles
 	}
 	
-	async sendFiles(e, title, randomFiles,groupPath, nextGroupPath) {
+	async sendFiles(e, title, randomFiles, groupPath, nextGroupPath) {
 		let parentid = await this.getdirid(groupPath)
 		if (!parentid) return
 		
@@ -82,7 +84,9 @@ export class uploadimg extends plugin {
 				logger.info(finalPath, title)
 				fs.rename(finalPath, finalPath.replace(groupPath, nextGroupPath), err => {})
 			  }
-		  } catch(uploaderr) {logger.info(finalPath + ':\n' + uploaderr.toString(), 'error')}
+		  } catch(uploaderr) {
+			  logger.info(finalPath + ':\n' + uploaderr.toString(), '[uploader]error]')
+		  }
 	    }
 	}
 	
@@ -97,14 +101,14 @@ export class uploadimg extends plugin {
 	}
 	
 	async upload(idx) {
-		let gcfg = Setting.getConfig('cron').groups
-		let groupNo  = gcfg[idx][0]
+		let gcfg = settings.getConfig('cron').groups
+		let groupNo  = String(gcfg[idx][0])
 		
 		let faceFiles = this.getFilesList(groupNo)
 
 		let obj = {isGroup: true, group: Bot.pickGroup(groupNo)}
 		obj.group_id = obj.group.group_id
-		this.sendFiles(obj, '定时同步', faceFiles, groupNo, gcfg[idx][1])
+		this.sendFiles(obj, '定时同步', faceFiles, groupNo, String(gcfg[idx][1]))
 	}
 
 	async getdirid(groupPath) {
