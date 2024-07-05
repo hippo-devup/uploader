@@ -70,7 +70,14 @@ export class uploadimg extends plugin {
 		for (let v of randomFiles) {
 		  let finalPath = v;
 		  try{
-			  let stat = await e.group.fs.upload(finalPath, parentid, undefined, percentage => {logger.info(percentage, title)})
+
+			  let stat
+			  if (e.group.sendFile) {
+				  stat = await e.group.sendFile(finalPath, parentid, path.basename(finalPath), percentage => {logger.info(percentage, title)})
+			  } else {
+				  stat = await e.group.fs.upload(finalPath, parentid, undefined, percentage => {logger.info(percentage, title)})
+			  }
+			  
 			  if (stat && stat.fid) {
 				logger.info(finalPath, title)
 				fs.rename(finalPath, finalPath.replace(groupPath, nextGroupPath), err => {})
