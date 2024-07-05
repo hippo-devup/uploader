@@ -42,6 +42,13 @@ export class uploadimg extends plugin {
 					log: true
 				}
 			)
+			
+			let dDir = path.join(_path, 'upload', gcfg[i][0]);
+			if (!fs.existsSync(dDir)) {
+				fs.mkdirSync(dDir);
+				logger.mark('creation directory', `Directory 'd' created at ${dDir}`);
+			}
+			
 			this.crontable[gcfg[i][0]] = {idx: i, nextGroupPath: gcfg[i][1]}
 		}
 	}
